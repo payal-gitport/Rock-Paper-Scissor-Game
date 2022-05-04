@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_state/Screens/index.dart';
 import 'package:loading_state/Util/game.dart';
@@ -12,6 +15,56 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  late ConfettiController _controllerTopCenter;
+  @override
+  void initState() {
+    super.initState();
+
+    _controllerTopCenter = ConfettiController(duration: const Duration(seconds: 2));
+    // if(Choice.gameRule[widget.gameChoice] == "You Win!")
+    // _controllerTopCenter.play();
+  }
+
+  @override
+  void dispose() {
+    _controllerTopCenter.dispose();
+    super.dispose();
+  }
+
+  Path drawCustomConfetti(Size? size) {
+    final path = Path();
+    path.moveTo(15, 5);
+    path.lineTo(-15, 5);
+    path.lineTo(-15, -5);
+    path.lineTo(15, -5);
+    path.lineTo(15, 5);
+    path.close();
+    return path;
+  }
+
+  Path drawStar(Size size) {
+    // Method to convert degree to radians
+    double degToRad(double deg) => deg * (pi / 180.0);
+
+    const numberOfPoints = 5;
+    final halfWidth = size.width / 2;
+    final externalRadius = halfWidth;
+    final internalRadius = halfWidth / 2.5;
+    final degreesPerStep = degToRad(360 / numberOfPoints);
+    final halfDegreesPerStep = degreesPerStep / 2;
+    final path = Path();
+    final fullAngle = degToRad(360);
+    path.moveTo(size.width, halfWidth);
+
+    for (double step = 0; step < fullAngle; step += degreesPerStep) {
+      path.lineTo(halfWidth + externalRadius * cos(step), halfWidth + externalRadius * sin(step));
+      path.lineTo(halfWidth + internalRadius * cos(step + halfDegreesPerStep),
+          halfWidth + internalRadius * sin(step + halfDegreesPerStep));
+    }
+    path.close();
+    return path;
+  }
+
   @override
   Widget build(BuildContext context) {
     double btnWidth = MediaQuery.of(context).size.width / 2 - 40;
@@ -47,6 +100,7 @@ class _GameScreenState extends State<GameScreen> {
     if (Choice.gameRule[widget.gameChoice.type]![robotChoice] == "You Win!") {
       setState(() {
         Game.score++;
+        _controllerTopCenter.play();
       });
     }
 
@@ -59,6 +113,20 @@ class _GameScreenState extends State<GameScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _controllerTopCenter,
+                blastDirection: -pi / 2,
+                maxBlastForce: 30, // set a lower max blast force
+                minBlastForce: 1, // set a lower min blast force
+                emissionFrequency: 0,
+                numberOfParticles: 100, // a lot of particles at once
+                gravity: 0.6,
+                blastDirectionality: BlastDirectionality.explosive,
+                createParticlePath: drawCustomConfetti,
+              ),
+            ),
             Container(
               padding: EdgeInsets.all(10.0),
               decoration: BoxDecoration(
